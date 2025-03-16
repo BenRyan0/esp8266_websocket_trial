@@ -13,12 +13,7 @@ wss.on('connection', (ws, req) => {
     console.log('Client connected from:', req.socket.remoteAddress);
 
     ws.on('message', (message) => {
-        try {
-            const data = JSON.parse(message);
-            console.log('Received message:', data);
-        } catch (error) {
-            console.error('Invalid JSON received:', message);
-        }
+        console.log('Received message:', message.toString());
     });
 
     ws.on('close', () => {
