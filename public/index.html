@@ -19,6 +19,7 @@
             font-size: 20px;
             font-weight: bold;
             color: white;
+            transition: background-color 0.5s ease;
         }
         .available { background-color: green; }
         .occupied { background-color: red; }
@@ -32,7 +33,7 @@
     <div id="A2" class="parking-space occupied">A2: Occupied</div>
 
     <script>
-        const ws = new WebSocket('ws://localhost:8080'); // Change to your WebSocket server address
+        const ws = new WebSocket('ws://localhost:8080');
 
         ws.onopen = function () {
             console.log("Connected to WebSocket server");
@@ -41,9 +42,9 @@
         ws.onmessage = function (event) {
             try {
                 const data = JSON.parse(event.data);
+                console.log("Message received:", data);
 
-                // Validate message format
-                if (data.role === "sensor" && ["A1", "A2"].includes(data.parking_space)) {
+                if (typeof data.parking_space === "string" && typeof data.is_available === "number") {
                     updateParkingStatus(data.parking_space, data.is_available);
                 }
             } catch (error) {
@@ -62,13 +63,19 @@
         function updateParkingStatus(space, isAvailable) {
             const element = document.getElementById(space);
             if (element) {
+                console.log(`Updating ${space}: ${isAvailable === 1 ? "Available" : "Occupied"}`);
+
                 if (isAvailable === 1) {
                     element.textContent = `${space}: Available`;
-                    element.className = "parking-space available";
+                    element.classList.remove("occupied");
+                    element.classList.add("available");
                 } else {
                     element.textContent = `${space}: Occupied`;
-                    element.className = "parking-space occupied";
+                    element.classList.remove("available");
+                    element.classList.add("occupied");
                 }
+            } else {
+                console.warn(`Element with ID ${space} not found!`);
             }
         }
     </script>
