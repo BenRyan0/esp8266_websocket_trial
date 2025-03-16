@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Space Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .parking-space {
+            display: inline-block;
+            width: 150px;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+        }
+        .available { background-color: green; }
+        .occupied { background-color: red; }
+    </style>
+</head>
+<body>
+
+    <h1>Parking Space Status</h1>
+    
+    <div id="A1" class="parking-space occupied">A1: Occupied</div>
+    <div id="A2" class="parking-space occupied">A2: Occupied</div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8080'); // Change to your WebSocket server address
+
+        ws.onopen = function () {
+            console.log("Connected to WebSocket server");
+        };
+
+        ws.onmessage = function (event) {
+            try {
+                const data = JSON.parse(event.data);
+
+                // Validate message format
+                if (data.role === "sensor" && ["A1", "A2"].includes(data.parking_space)) {
+                    updateParkingStatus(data.parking_space, data.is_available);
+                }
+            } catch (error) {
+                console.error("Invalid data received", error);
+            }
+        };
+
+        ws.onerror = function (error) {
+            console.error("WebSocket Error:", error);
+        };
+
+        ws.onclose = function () {
+            console.log("WebSocket connection closed");
+        };
+
+        function updateParkingStatus(space, isAvailable) {
+            const element = document.getElementById(space);
+            if (element) {
+                if (isAvailable === 1) {
+                    element.textContent = `${space}: Available`;
+                    element.className = "parking-space available";
+                } else {
+                    element.textContent = `${space}: Occupied`;
+                    element.className = "parking-space occupied";
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
