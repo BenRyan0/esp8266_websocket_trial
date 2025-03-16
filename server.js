@@ -4,23 +4,24 @@ const WebSocket = require('ws');
 const path = require('path');
 
 const app = express();
+const PORT = process.env.PORT || 8080;
 
-// Serve static files (like index.html)
+// Serve static files from "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws, req) => {
-    console.log('Client connected from:', req.socket.remoteAddress);
+    console.log(`✅ Client connected from: ${req.socket.remoteAddress}`);
 
     ws.on('message', (message) => {
         try {
             const data = JSON.parse(message.toString());
 
-            // Validate format
+            // Validate message format
             if (typeof data.parking_space === 'string' && typeof data.is_available === 'number') {
-                console.log('Valid message received:', data);
+                console.log('📩 Valid message received:', data);
 
                 // Broadcast message to all connected clients
                 wss.clients.forEach(client => {
@@ -29,27 +30,26 @@ wss.on('connection', (ws, req) => {
                     }
                 });
             } else {
-                console.log('Invalid message format:', data);
+                console.warn('⚠️ Invalid message format:', data);
                 ws.send(JSON.stringify({ error: 'Invalid message format' }));
             }
         } catch (error) {
-            console.log('Invalid JSON received');
+            console.error('❌ Invalid JSON received:', error);
             ws.send(JSON.stringify({ error: 'Invalid JSON' }));
         }
     });
 
     ws.on('close', () => {
-        console.log('Client disconnected');
+        console.warn('🔌 Client disconnected');
     });
 });
 
-// Serve index.html
+// Serve index.html as default
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
-const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+// Start server on all network interfaces (for Render)
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running at https://esp8266-websocket-trial.onrender.com`);
 });

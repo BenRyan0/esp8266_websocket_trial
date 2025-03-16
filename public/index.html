@@ -21,8 +21,8 @@
             color: white;
             transition: background-color 0.5s ease;
         }
-        .available { background-color: green; }
-        .occupied { background-color: red; }
+        .available { background-color: green !important; }
+        .occupied { background-color: red !important; }
     </style>
 </head>
 <body>
@@ -33,51 +33,61 @@
     <div id="A2" class="parking-space occupied">A2: Occupied</div>
 
     <script>
-        const ws = new WebSocket('ws://localhost:8080');
+        const SERVER_URL = 'wss://esp8266-websocket-trial.onrender.com';
+        let ws;
 
-        ws.onopen = function () {
-            console.log("Connected to WebSocket server");
-        };
+        function connectWebSocket() {
+            ws = new WebSocket(SERVER_URL);
 
-        ws.onmessage = function (event) {
-            try {
-                const data = JSON.parse(event.data);
-                console.log("Message received:", data);
+            ws.onopen = function () {
+                console.log("✅ Connected to WebSocket server");
+            };
 
-                if (typeof data.parking_space === "string" && typeof data.is_available === "number") {
-                    updateParkingStatus(data.parking_space, data.is_available);
+            ws.onmessage = function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log("📩 Message received:", data);
+
+                    if (typeof data.parking_space === "string" && typeof data.is_available === "number") {
+                        updateParkingStatus(data.parking_space, data.is_available);
+                    }
+                } catch (error) {
+                    console.error("❌ Invalid data received", error);
                 }
-            } catch (error) {
-                console.error("Invalid data received", error);
-            }
-        };
+            };
 
-        ws.onerror = function (error) {
-            console.error("WebSocket Error:", error);
-        };
+            ws.onerror = function (error) {
+                console.error("🚨 WebSocket Error:", error);
+            };
 
-        ws.onclose = function () {
-            console.log("WebSocket connection closed");
-        };
+            ws.onclose = function () {
+                console.warn("🔌 WebSocket connection closed. Reconnecting in 5s...");
+                setTimeout(connectWebSocket, 5000);
+            };
+        }
 
         function updateParkingStatus(space, isAvailable) {
             const element = document.getElementById(space);
             if (element) {
-                console.log(`Updating ${space}: ${isAvailable === 1 ? "Available" : "Occupied"}`);
+                console.log(`🔄 Updating ${space}: ${isAvailable === 1 ? "Available" : "Occupied"}`);
+
+                // Clear both classes before updating
+                element.classList.remove("occupied", "available");
 
                 if (isAvailable === 1) {
                     element.textContent = `${space}: Available`;
-                    element.classList.remove("occupied");
                     element.classList.add("available");
                 } else {
                     element.textContent = `${space}: Occupied`;
-                    element.classList.remove("available");
                     element.classList.add("occupied");
                 }
             } else {
-                console.warn(`Element with ID ${space} not found!`);
+                console.warn(`⚠️ Element with ID ${space} not found!`);
             }
         }
+
+        // Connect WebSocket when page loads
+        connectWebSocket();
     </script>
 
 </body>
